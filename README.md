@@ -1,5 +1,5 @@
 # FNBench
-Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (Currently under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels.
+Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (currently under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels.
 
 ## Abstract
 <!-- TBD. -->
