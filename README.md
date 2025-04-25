@@ -40,7 +40,7 @@ We recommend some useful related resources to further provide several directions
 | FedNed (AAAI) | Recommended work to tackle extreme noisy clients | [Link](https://github.com/linChen99/FedNed) |
 | FedAAAI (AAAI) | Recommended work to tackle label noise for image segmentation  | [Link](https://github.com/wnn2000/FedAAAI) |
 | Buffalo (ACM CIKM) | Recommended work to tackle modality hetogeneity | [Link](https://github.com/beiyuouo/Buffalo) |
-
+| Twin-sight (ICLR) | Recommended work to tackle semi-supervised learning | [Link](https://github.com/visitworld123/Twin-sight) |
 
 ## Citing this work
 In recent years, we have proposed `FedLSR (ACM CIKM'22)`, `FedNoRo (IJCAI'23)`, `FedELC (ACM CIKM'24)`, `Dual Optim (under review)` and this benchmark study `FNBench (IEEE TDSC, under review)`. We benifit from many well-organized open-source projects. We encourage and hope more efforts can be made to study the noisy label issue in diverse research domains. If you find our work helpful, please consider following citations.
