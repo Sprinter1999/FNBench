@@ -1,41 +1,52 @@
 # FNBench
-Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (currently under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels.
+Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels. I am currently updating this codebase and removing some outdated codes (not finished yet). If you have any questions, please feel free to contact me: ) 
 
 ## Abstract
 <!-- TBD. -->
 
 ![framework](TDSC.jpg)
 
-## Dataset
-We use CIFAR-10, CIFAR-100, CIFAR-10-N, CIFAR-100-N, and one large-scale online clothing datasets Clothing1M for evaluation. We list a table as below:
+## Datasets
+For vision tasks, we use CIFAR-10, CIFAR-100, CIFAR-10-N, CIFAR-100-N, and one large-scale online clothing datasets Clothing1M for evaluation. 
+For language tasks, we use AGNews for evaluation.
+We list a table as below:
 
-| Dataset | #Classes | #Train Set | #Test Set | Label Noise Pattern | Extra Information  |
-| :-----: | :------: | :--------: | :-------: | :----------------: | :----------------: |
-| CIFAR-10 |    10    |   50,000   |   10,000  | Manual Injected | -  |
-| CIFAR-100|    100   |   50,000   |   10,000  | Manual Injected | -  |
-| CIFAR-10-N|   10 |   50,000   |   10,000  |  Human Annotation Error | https://github.com/UCSC-REAL/cifar-10-100n  |
-| CIFAR-100-N| 100  |   50,000   |   10,000  | Human Annotation Error  | https://github.com/UCSC-REAL/cifar-10-100n  |
-| Clothing1M|   14 | 1,000,000  |   10,000 | Systematic | https://github.com/Cysu/noisy_label  |
+| Dataset | Model | #Classes | #Train Set | #Test Set | Label Noise Pattern | Extra Information  |
+| :-----: | :------: | :------: | :--------: | :-------: | :----------------: | :----------------: |
+| CIFAR-10 | ResNet-18 |   10    |   50,000   |   10,000  | Manual Injected | -  |
+| CIFAR-100| ResNet-32 |   100   |   50,000   |   10,000  | Manual Injected | -  |
+| AGNews |   FastText | 4     |  120,000  |   7,600  | Manual Injected | [link](https://www.kaggle.com/datasets/amananandrai/ag-news-classification-dataset)  |
+| CIFAR-10-N| ResNet-18 |  10 |   50,000   |   10,000  |  Human Annotation Error | [link](https://github.com/UCSC-REAL/cifar-10-100n)  |
+| CIFAR-100-N | ResNet-32 | 100  |   50,000   |   10,000  | Human Annotation Error  | [link](https://github.com/UCSC-REAL/cifar-10-100n)  |
+| Clothing1M| ResNet-50 |  14 | 1,000,000  |   10,000 | Systematic | [link](https://github.com/Cysu/noisy_label)  |
 
 
-For the last three datasets, considering related copyrights, please refer to the corresponding links for dataset requisition. Meanwhile, we provide an implementation code to experiment on `Clothing1M` in this [link](https://github.com/Sprinter1999/Clothing1M_FedAvg).
+For the last three datasets, considering related copyrights, please refer to the corresponding links for dataset requisition. Meanwhile, we provide an implementation code to experiment on `Clothing1M` in this [codebase](https://github.com/Sprinter1999/Clothing1M_FedAvg).
 
-## Usage
-> bash eval_fedelc.sh
+## Baselines
 
-please refer to the `./utils/options.py` for more details. 
+- **General FL methods**: FedAvg, FedProx, FedExP
+- **Robust FL methods**: TrimmedMean, Gradient Clipping, Krum, Median, RFA (now debugging...)
+- **General Noisy Label Learning (NLL) methods**: Co-teaching, Co-teaching+, SymmetricCE, SELFIE, Joint Optim, DivideMix
+- **Federated Nosy Label Learning (FNLL) methods**: RobustFL, FedLSR, FedRN, FedNoRo, FedELC
 
-## Key Dependencies
-- Python 3.8
-- PyTorch 1.8.1
-- scikit-learn 1.3.2
+
+## Example for Usage
+> bash eval_fedavg.sh
+
+please refer to the `./utils/options.py` for more details. We recommend you to experiment on Nvidia 3090 (24G) GPUS or more advanced GPUs.
+
+
+
+
 
 ## Awesome Resources
-We recommend some useful related resources to further provide several directions for future study.
+We recommend some useful related resources to further provide several relevant directions for future study.
 
 | Name | Summary | Code Link |
 | --- | --- | --- |
 | FedNoisy | Recommended codebase for FNLL research | [Link](https://github.com/SMILELab-FL/FedNoisy) |
+| Clothing1M_FedAvg | Recommended codebase for FedAvg on Clothing1M | [Link](https://github.com/Sprinter1999/Clothing1M_FedAvg) |
 | HAR Datasets (ACM Mobisys) | Recommended time-series Datasets | [Link](https://github.com/xmouyang/FL-Datasets-for-HAR) |
 | FedDSHAR (FGCS) | Recommended work to tackle noisy labels for time-series | [Link](https://github.com/coke2020ice/FedDSHAR) |
 | FedNed (AAAI) | Recommended work to tackle extreme noisy clients | [Link](https://github.com/linChen99/FedNed) |
@@ -43,10 +54,12 @@ We recommend some useful related resources to further provide several directions
 | Buffalo (ACM CIKM) | Recommended work to tackle modality hetogeneity | [Link](https://github.com/beiyuouo/Buffalo) |
 | Twin-sight (ICLR) | Recommended work to tackle semi-supervised learning | [Link](https://github.com/visitworld123/Twin-sight) |
 
-## Citing this work
-In recent years, we have proposed `FedLSR (ACM CIKM'22)`, `FedNoRo (IJCAI'23)`, `FedELC (ACM CIKM'24)`, `FedDSHAR (FGCS)` ,`Dual Optim (under review)` and this benchmark study `FNBench (IEEE TDSC, under review)`. We benifit from many well-organized open-source projects. We encourage and hope more efforts can be made to study the noisy label issue in diverse research domains. If you find our work helpful, please consider following citations.
+## Acknowledgements
+In recent years, we have proposed `FedLSR (ACM CIKM'22)`, `FedNoRo (IJCAI'23)`, `FedELC (ACM CIKM'24)`, `FedDSHAR (FGCS)` ,`Dual Optim (under review)` and this benchmark study `FNBench (IEEE TDSC, under review)`. 
+We benifit from many well-organized open-source projects.
+We encourage and hope more efforts can be made to study the noisy label issue in diverse research domains. If you find our work helpful, please consider following citations.
 
-BTW, collaborations and pull requests are always welcome! If you have any questions or suggestions, please feel free to contact me : )
+By the way, collaborations and pull requests are always welcome! If you have any questions or suggestions, please feel free to contact me : )
 
 ```bibtex
 @article{Jiang_2024,

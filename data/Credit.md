@@ -1,0 +1,2 @@
+# Credit
+Note that the annotation of CIFAR-10-N and CIFAR-100-N are initially provided by [Wei et.al](http://www.noisylabels.com/). We use these files herein to facilitate related researchers and appreciate them for their open-source work.
