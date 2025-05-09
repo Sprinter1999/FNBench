@@ -89,10 +89,10 @@ class AGNews(torch.utils.data.Dataset):
         self.texts = []
         self.labels = []
         
-        # AGNews数据集有4个类别
+
         self.num_classes = 4
         
-        # 加载数据
+
         if mode == 'train':
             data_file = os.path.join(root, 'train.csv')
         else:
@@ -101,10 +101,10 @@ class AGNews(torch.utils.data.Dataset):
         with open(data_file, 'r', encoding='utf-8') as f:
             for line in f:
                 label, title, description = line.strip().split(',', 2)
-                # 合并标题和描述作为输入文本
+
                 text = title + ' ' + description
                 self.texts.append(text)
-                self.labels.append(int(label) - 1)  # 将标签从1-4转换为0-3
+                self.labels.append(int(label) - 1)  
                 
     def __getitem__(self, index):
         text = self.texts[index]

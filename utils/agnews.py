@@ -46,7 +46,7 @@ class AGNews(Dataset):
             self.texts.append(text)
             self.labels.append(label - 1)  
         
-        self.train_labels = self.labels  # 添加这一行
+        self.train_labels = self.labels  
             
     def __getitem__(self, index):
         text = self.texts[index]

@@ -7,6 +7,7 @@ from torch import nn
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
 from torch.cuda.amp import autocast as autocast
+from torch.nn.utils.rnn import pad_sequence
 import copy
 
 
@@ -16,6 +17,50 @@ from model_arch.build_model import build_model as get_model
 
 import torchvision
 from torchvision import transforms
+
+
+def dataset_split_collate_fn(batch):
+    if len(batch[0]) == 2:  # (data, label)
+        data, labels = zip(*batch)
+        if isinstance(data[0], torch.Tensor) and data[0].dim() == 1:  
+            data_padded = pad_sequence(data, batch_first=True, padding_value=0)  
+            labels = torch.tensor(labels, dtype=torch.long)
+            return data_padded, labels
+        else:  # images
+            data = torch.stack(data)
+            labels = torch.tensor(labels, dtype=torch.long)
+            return data, labels
+
+    elif len(batch[0]) == 3:  # (data, label, item)
+        data, labels, items = zip(*batch)
+        if isinstance(data[0], torch.Tensor) and data[0].dim() == 1:  
+            data_padded = pad_sequence(data, batch_first=True, padding_value=0)
+            labels = torch.tensor(labels, dtype=torch.long)
+            items = torch.tensor(items, dtype=torch.long)
+            return data_padded, labels, items
+        else:  # images
+            data = torch.stack(data)
+            labels = torch.tensor(labels, dtype=torch.long)
+            items = torch.tensor(items, dtype=torch.long)
+            return data, labels, items
+
+    elif len(batch[0]) == 4:  # (data, label, item, real_idx)
+        data, labels, items, real_idxs = zip(*batch)
+        if isinstance(data[0], torch.Tensor) and data[0].dim() == 1:  
+            data_padded = pad_sequence(data, batch_first=True, padding_value=0)
+            labels = torch.tensor(labels, dtype=torch.long)
+            items = torch.tensor(items, dtype=torch.long)
+            real_idxs = torch.tensor(real_idxs, dtype=torch.long)
+            return data_padded, labels, items, real_idxs
+        else:  # images
+            data = torch.stack(data)
+            labels = torch.tensor(labels, dtype=torch.long)
+            items = torch.tensor(items, dtype=torch.long)
+            real_idxs = torch.tensor(real_idxs, dtype=torch.long)
+            return data, labels, items, real_idxs
+
+    else:
+        raise ValueError(f"Unsupported batch format with {len(batch[0])} elements.")
 
 
 class DatasetSplit(Dataset):
@@ -200,77 +245,7 @@ def get_local_update_objects(args, dataset_train, dict_users=None, noise_rates=N
     return local_update_objects
 
 
-class SAM(torch.optim.Optimizer):
 
-    def __init__(self, params, base_optimizer, rho=0.9, adaptive=False, **kwargs):
-        assert rho >= 0.0, f"Invalid rho, should be non-negative: {rho}"
-
-        defaults = dict(rho=rho, adaptive=adaptive, **kwargs)
-        super(SAM, self).__init__(params, defaults)
-
-        self.base_optimizer = base_optimizer(self.param_groups, **kwargs)
-        self.param_groups = self.base_optimizer.param_groups
-
-    @torch.no_grad()
-    def first_step(self, zero_grad=False):
-        grad_norm = self._grad_norm()
-        for group in self.param_groups:
-            scale = group["rho"] / (grad_norm + 1e-12)
-
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
-                self.state[p]["old_p"] = p.data.clone()
-                e_w = (torch.pow(p, 2)
-                       if group["adaptive"] else 1.0) * p.grad * scale.to(p)
-                p.add_(e_w)  # climb to the local maximum "w + e(w)"
-
-        if zero_grad:
-            self.zero_grad()
-
-    @torch.no_grad()
-    def second_step(self, zero_grad=False):
-        for group in self.param_groups:
-            for p in group["params"]:
-                if p.grad is None:
-                    continue
-                # get back to "w" from "w + e(w)"
-                p.data = self.state[p]["old_p"]
-
-        self.base_optimizer.step()  # do the actual "sharpness-aware" update
-
-        if zero_grad:
-            self.zero_grad()
-
-    @torch.no_grad()
-    def step(self, closure=None):
-        assert closure is not None, "Sharpness Aware Minimization requires closure, but it was not provided"
-        # the closure should do a full forward-backward pass
-        closure = torch.enable_grad()(closure)
-
-        self.first_step(zero_grad=True)
-        closure()
-        self.second_step()
-
-    def _grad_norm(self):
-        # put everything on the same device, in case of model parallelism
-        shared_device = self.param_groups[0]["params"][0].device
-        norm = torch.norm(
-            torch.stack([
-                        ((torch.abs(p) if group["adaptive"] else 1.0)
-                         * p.grad).norm(p=2).to(shared_device)
-                        for group in self.param_groups for p in group["params"]
-                        if p.grad is not None
-                        ]),
-            p=2
-        )
-        return norm
-
-    def load_state_dict(self, state_dict):
-        super().load_state_dict(state_dict)
-        self.base_optimizer.param_groups = self.param_groups
-
-#TODO: 
 class FedDecorrLoss(nn.Module):
 
     def __init__(self):
@@ -347,6 +322,9 @@ class BaseLocalUpdate:
 
         self.idx_return = idx_return
         self.real_idx_return = real_idx_return
+        
+        #TODO: Load custom collate_fn
+        collate_fn = dataset_split_collate_fn if args.collate_fn else None
 
         self.ldr_train = DataLoader(
             DatasetSplit(dataset, idxs, idx_return=idx_return,
@@ -354,7 +332,7 @@ class BaseLocalUpdate:
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
-            collate_fn=args.collate_fn if args.collate_fn else None,
+            collate_fn= collate_fn if args.collate_fn else None,
             pin_memory=True,
             drop_last=True,
         )
@@ -405,6 +383,7 @@ class BaseLocalUpdate:
 
                 # with autocast():
                 loss = self.forward_pass(batch, net)
+                
 
                 loss.backward()
                 optimizer.step()
@@ -491,16 +470,20 @@ class BaseLocalUpdate:
     def forward_pass(self, batch, net, net2=None):
         images, labels = batch
 
-        # 检查是否为文本数据（AGNews 数据集）
-        if isinstance(images, torch.Tensor) and images.dim() == 2:  # 文本数据
+        # text
+        if isinstance(images, torch.Tensor) and images.dim() == 2:  # text (but named with images), bad name!
             images = images.to(self.args.device)
-        else:  # 图像数据
+        else:  # images
             images = images.to(self.args.device).float()
 
         labels = labels.to(self.args.device)
 
         log_probs, features = net(images)
         loss = self.loss_func(log_probs, labels)
+        
+        if self.is_svd_loss:
+            loss_feddecorr = self.feddecorr(features)
+            loss += loss_feddecorr * self.decorr_coef
 
         if net2 is None:
             return loss
@@ -541,14 +524,17 @@ class LocalUpdateSymmetric(BaseLocalUpdate):
 
         self.idx_return = idx_return
         self.real_idx_return = real_idx_return
+        
+        #TODO: Load custom collate_fn
+        collate_fn = dataset_split_collate_fn if args.collate_fn else None
 
         self.ldr_train = DataLoader(
             DatasetSplit(dataset, idxs, idx_return=idx_return,
                          real_idx_return=real_idx_return),
             batch_size=self.args.local_bs,
             shuffle=True,
-            num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            num_workers= self.args.num_workers,
+            collate_fn= collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             drop_last=True
         )
@@ -658,6 +644,9 @@ class LocalUpdateClipping:
 
         self.idx_return = idx_return
         self.real_idx_return = real_idx_return
+        
+        #TODO: Load custom collate_fn
+        collate_fn = dataset_split_collate_fn if args.collate_fn else None
 
         self.ldr_train = DataLoader(
             DatasetSplit(dataset, idxs, idx_return=idx_return,
@@ -665,7 +654,7 @@ class LocalUpdateClipping:
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn= collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             drop_last=True,
         )
@@ -786,6 +775,9 @@ class LocalUpdateFedProx:
 
         self.idx_return = idx_return
         self.real_idx_return = real_idx_return
+        
+        #TODO: Load custom collate_fn
+        collate_fn = dataset_split_collate_fn if args.collate_fn else None
 
         self.ldr_train = DataLoader(
             DatasetSplit(dataset, idxs, idx_return=idx_return,
@@ -793,7 +785,7 @@ class LocalUpdateFedProx:
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn=collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             drop_last=True,
         )
@@ -919,6 +911,9 @@ class LocalUpdateFedLSR(BaseLocalUpdate):
         self.total_epochs = 0
         self.net1 = get_model(self.args)
         # self.net1 = self.net1.to(self.args.device)
+        
+        #TODO: Load custom collate_fn
+        collate_fn = dataset_split_collate_fn if args.collate_fn else None
 
         self.ldr_train = DataLoader(
             DatasetSplit(dataset, idxs, idx_return=idx_return,
@@ -926,7 +921,7 @@ class LocalUpdateFedLSR(BaseLocalUpdate):
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn= collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             drop_last=True
         )
@@ -1079,13 +1074,16 @@ class LocalUpdateFedRN(BaseLocalUpdate):
         self.gaussian_noise = gaussian_noise
         self.CE = nn.CrossEntropyLoss(reduction='none')
         self.update_name = 'fedrn'
+        
+        #TODO: Load custom collate_fn
+        self.collate_fn = dataset_split_collate_fn if self.args.collate_fn else None
 
         self.ldr_eval = DataLoader(
             DatasetSplit(dataset, idxs, real_idx_return=True),
             batch_size=self.args.local_bs,
             shuffle=False,
             num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn=self.collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             # drop_last=True
         )
@@ -1093,6 +1091,9 @@ class LocalUpdateFedRN(BaseLocalUpdate):
         self.expertise = 0.5
         self.arbitrary_output = torch.rand((1, self.args.num_classes))
         self.net1 = get_model(self.args)
+        
+                
+
 
 
 
@@ -1114,6 +1115,7 @@ class LocalUpdateFedRN(BaseLocalUpdate):
             expertise = correct / n_total
 
         self.expertise = expertise
+
 
     def set_arbitrary_output(self):
         self.net1.to(self.args.device)
@@ -1239,7 +1241,7 @@ class LocalUpdateFedRN(BaseLocalUpdate):
                                     batch_size=self.args.local_bs,
                                     shuffle=True,
                                     num_workers=self.args.num_workers,
-                                    collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+                                    collate_fn=self.collate_fn if self.args.collate_fn else None,
                                     pin_memory=True,
                                     # drop_last=True
                                     )
@@ -1267,17 +1269,22 @@ class LocalUpdateRFL(BaseLocalUpdate):
             len(self.dataset), dtype=torch.long, device=self.args.device)
         self.sim = torch.nn.CosineSimilarity(dim=1)
         self.loss_func = torch.nn.CrossEntropyLoss(reduce=False)
+        
+        #TODO: Load custom collate_fn
+        self.collate_fn = dataset_split_collate_fn if self.args.collate_fn else None
+        
+        
         self.ldr_train = DataLoader(
             DatasetSplitRFL(dataset, idxs),
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
             pin_memory=True,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn=self.collate_fn if self.args.collate_fn else None,
             drop_last=True
         )
         self.ldr_train_tmp = DataLoader(DatasetSplitRFL(
-            dataset, idxs), batch_size=1, shuffle=True,collate_fn=self.args.collate_fn if self.args.collate_fn else None,)
+            dataset, idxs), batch_size=1, shuffle=True,collate_fn=self.collate_fn if self.args.collate_fn else None,)
         # self.tmp_true_labels = tmp_true_labels
         self.update_name = 'RobustFL'
 
@@ -1325,37 +1332,42 @@ class LocalUpdateRFL(BaseLocalUpdate):
                 images, labels, idx = batch
                 if torch.cuda.is_available():
                     images, labels = images.cuda(), labels.cuda()
+                
                 with autocast():
                     logit, feature = model(images)
-                    feature_copy = copy.deepcopy(feature)
-                    feature = feature.detach()
-                    if torch.cuda.is_available():
-                        f_k = f_k.to(self.args.device)
+                    # feature_copy = copy.deepcopy(feature)
+                    
+                feature = feature.detach()
+                if torch.cuda.is_available():
+                    f_k = f_k.to(self.args.device)
 
-                    small_loss_idxs = self.get_small_loss_samples(
-                        logit, labels, forget_ratee)
+                small_loss_idxs = self.get_small_loss_samples(
+                    logit, labels, forget_ratee)
+                
 
-                    y_k_tilde = torch.zeros(self.args.local_bs, device=self.args.device)
-                    mask = torch.zeros(self.args.local_bs, device=self.args.device)
+                y_k_tilde = torch.zeros(self.args.local_bs, device=self.args.device)
+                mask = torch.zeros(self.args.local_bs, device=self.args.device)
+                for i in small_loss_idxs:
+                    y_k_tilde[i] = torch.argmax(
+                        self.sim(f_k, torch.reshape(feature[i], (1, self.args.feature_dim))))
+                    if y_k_tilde[i] == labels[i]:
+                        mask[i] = 1
+
+                self.pseudo_labels = self.pseudo_labels.to(self.args.device)
+                idx = idx.to(self.args.device)  
+
+                # When to use pseudo-labels
+                if self.args.g_epoch < self.args.T_pl:
                     for i in small_loss_idxs:
-                        y_k_tilde[i] = torch.argmax(
-                            self.sim(f_k, torch.reshape(feature[i], (1, self.args.feature_dim))))
-                        if y_k_tilde[i] == labels[i]:
-                            mask[i] = 1
+                        self.pseudo_labels[idx[i]] = labels[i]
 
-                    # When to use pseudo-labels
-                    if self.args.g_epoch < self.args.T_pl:
-                        for i in small_loss_idxs:
-                            self.pseudo_labels[idx[i]] = labels[i]
+                # For loss calculating
+                new_labels = mask[small_loss_idxs] * labels[small_loss_idxs] + \
+                    (1 - mask[small_loss_idxs]) * self.pseudo_labels[idx[small_loss_idxs]]
+                new_labels = new_labels.type(torch.LongTensor).to(self.args.device)
 
-                    # For loss calculating
-                    new_labels = mask[small_loss_idxs]*labels[small_loss_idxs] + \
-                        (1-mask[small_loss_idxs]) * \
-                        self.pseudo_labels[idx[small_loss_idxs]]
-                    new_labels = new_labels.type(torch.LongTensor).to(self.args.device)
-
-                    loss = self.RFLloss(logit, labels, feature,
-                                        f_k, mask, small_loss_idxs, new_labels)
+                loss = self.RFLloss(logit, labels, feature,
+                                    f_k, mask, small_loss_idxs, new_labels)
 
 
                 # weight update by minimizing loss: L_total = L_c + lambda_cen * L_cen + lambda_e * L_e
@@ -1386,6 +1398,7 @@ class LocalUpdateRFL(BaseLocalUpdate):
             # print(f"loss for this epoch is {temp}")
 
         return model.state_dict(), sum(e_loss) / len(e_loss), f_k
+
 
     def RFLloss(self, logit, labels, feature, f_k, mask, small_loss_idxs, new_labels):
         mse = torch.nn.MSELoss(reduction='none')
@@ -2147,6 +2160,9 @@ class LocalUpdateFedNoRo(BaseLocalUpdate):
         self.idx_return = idx_return
         self.real_idx_return = real_idx_return
         self.total_epochs = 0
+        
+        #TODO: Load custom collate_fn
+        self.collate_fn = dataset_split_collate_fn if self.args.collate_fn else None
 
         self.ldr_train = DataLoader(
             DatasetSplit(dataset, idxs, idx_return=idx_return,
@@ -2154,7 +2170,7 @@ class LocalUpdateFedNoRo(BaseLocalUpdate):
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn=self.collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             drop_last=True
         )
@@ -2302,6 +2318,9 @@ class LocalUpdateFedELC(BaseLocalUpdate):
         self.idx_return = idx_return
         self.real_idx_return = True #Fixed
         self.total_epochs = 0
+        
+        #TODO: Load custom collate_fn
+        self.collate_fn = dataset_split_collate_fn if self.args.collate_fn else None
 
         self.ldr_train = DataLoader(
             DatasetSplit(dataset, idxs, idx_return=idx_return,
@@ -2309,7 +2328,7 @@ class LocalUpdateFedELC(BaseLocalUpdate):
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn=self.collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             drop_last=True
         )
@@ -2320,7 +2339,7 @@ class LocalUpdateFedELC(BaseLocalUpdate):
             batch_size=self.args.local_bs,
             shuffle=True,
             num_workers=self.args.num_workers,
-            collate_fn=self.args.collate_fn if self.args.collate_fn else None,
+            collate_fn=self.collate_fn if self.args.collate_fn else None,
             pin_memory=True,
             drop_last=False
         )
@@ -2418,7 +2437,7 @@ class LocalUpdateFedELC(BaseLocalUpdate):
         loss_total = Lc/self.args.num_classes + self.args.alpha_pencil* Lo + self.args.beta_pencil* Le/self.args.num_classes 
         
         
-        print(f"lc: {Lc},  le: {Le}, lo: {Lo}")
+        # print(f"lc: {Lc},  le: {Le}, lo: {Lo}")
 
         return loss_total
     
@@ -2439,7 +2458,6 @@ class LocalUpdateFedELC(BaseLocalUpdate):
 
 
 
-        #TODO: 正式开始本地训练
         for epoch in range(self.args.local_ep):
             self.epoch = epoch
             batch_loss = []
@@ -2538,6 +2556,10 @@ class LocalUpdateFedELC(BaseLocalUpdate):
 
                 loss = self.pencil_loss(
                                 logits, labels_update, labels, feat)
+                
+                if self.is_svd_loss:
+                    loss_feddecorr = self.feddecorr(feat)
+                    loss += loss_feddecorr * self.decorr_coef
 
 
                 loss.backward()

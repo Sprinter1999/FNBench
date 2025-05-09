@@ -1,7 +1,7 @@
 # FNBench
-Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels. I am currently updating this codebase and removing some outdated codes (not finished yet). If you have any questions, please feel free to contact me: ) 
+Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels. I am currently updating this codebase and removing some outdated codes. The revised version will be available soon. If you have any questions, please feel free to contact me: ) 
 
-## Abstract
+## Previous Abstract
 <!-- TBD. -->
 
 ![framework](TDSC.jpg)
@@ -34,7 +34,7 @@ For the last three datasets, considering related copyrights, please refer to the
 ## Example for Usage
 > bash eval_fedavg.sh
 
-please refer to the `./utils/options.py` for more details. We recommend you to experiment on Nvidia 3090 (24G) GPUS or more advanced GPUs.
+please refer to the `./utils/options.py` for more details. For CIFAR-N experiments, please use another two main files (like main_fed_LNL_cifar10N.py). We recommend you to experiment on Nvidia 3090 (24G) GPUS or more advanced GPUs. 
 
 
 

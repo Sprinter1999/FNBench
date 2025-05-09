@@ -74,24 +74,24 @@ def load_dataset(dataset):
         data_path = './data/agnews'
         num_classes = 4
         
-        # 文本预处理转换
+
         trans_train = transforms.Compose([
-            transforms.Lambda(lambda x: x.lower()),  # 转换为小写
-            transforms.Lambda(lambda x: x.strip()),  # 去除首尾空格
+            transforms.Lambda(lambda x: x.lower()),  
+            transforms.Lambda(lambda x: x.strip()), 
         ])
         trans_val = transforms.Compose([
             transforms.Lambda(lambda x: x.lower()),
             transforms.Lambda(lambda x: x.strip()),
         ])
         
-        # 创建训练集
+
         dataset_train = AGNews(
             root=data_path,
             transform=trans_train,
             mode='train'
         )
         
-        # 使用训练集的vocab和tokenizer创建测试集
+
         dataset_test = AGNews(
             root=data_path,
             transform=trans_val,
@@ -100,7 +100,7 @@ def load_dataset(dataset):
             tokenizer=dataset_train.get_tokenizer()
         )
         
-        # 自定义 collate_fn 用于文本填充
+        # custom collate_fn for text 
         def collate_fn(batch):
             texts, labels = zip(*batch)
             texts_padded = pad_sequence(texts, batch_first=True, padding_value=dataset_train.get_pad_idx())

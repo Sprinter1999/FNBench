@@ -38,7 +38,7 @@ def test_img(net_g, data_loader, args):
   
     return accuracy, test_loss, precision, recall, f1  
 
-# 提取中间特征嵌入  
+
 def get_feature_embedding(model, loader):  
     embeddings = []  
     model.eval()  

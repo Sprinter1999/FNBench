@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Python version: 3.6
-
 import copy
 import torch
 # from torch import nn
@@ -127,7 +123,6 @@ class LocalModelWeights:
         else:
             # default method for aggregation
             w_glob = FedAvg(self.w_locals, self.data_size_locals)
-            # exit('Error: unrecognized aggregation method')
 
         return w_glob
 
@@ -147,22 +142,40 @@ def FedAvg(w, average_weights):
 
 
 def RFA(w):
-    global_w_update = copy.deepcopy(w[0])
+    """
+    Weiszfeld
+    """
+    global_w_update = copy.deepcopy(w[0]) 
+    eps = 1e-5  
+    max_iter = 10  
 
     for k in global_w_update.keys():
-        param_updates = torch.stack([client_w[k] for client_w in w])
-        
-        median = param_updates.mean(dim=0)  
-        for _ in range(10):  
-            distances = torch.norm(param_updates - median, dim=tuple(range(1, param_updates.ndim)))
-            weights = 1.0 / (distances + 1e-10)  # avoid division by zero
-            weights /= weights.sum()
-            new_median = torch.sum(weights[:, None] * param_updates, dim=0)
-            if torch.norm(new_median - median) < 1e-5: 
+
+        param_updates = torch.stack([client_w[k] for client_w in w]).float()  
+
+        median = torch.mean(param_updates, dim=0)
+
+        for _ in range(max_iter):
+            diff = param_updates - median
+            diff_flat = diff.view(diff.size(0), -1)  
+            distances = torch.norm(diff_flat, dim=1) 
+
+
+            weights = 1.0 / torch.clamp(distances, min=eps)
+            weights /= weights.sum() 
+
+
+            new_shape = [weights.shape[0]] + [1] * (param_updates.ndim - 1)
+            weights_reshaped = weights.view(*new_shape)
+
+
+            new_median = torch.sum(weights_reshaped * param_updates, dim=0)
+
+            if torch.norm(new_median - median) < eps:
                 break
             median = new_median
-        
-        global_w_update[k] = median
+
+        global_w_update[k] = median  
 
     return global_w_update
 
@@ -267,18 +280,7 @@ def model_dist(w_1, w_2):
 
     return dist_total.cpu().item()
 
-# def Median(w_locals):
-#     w_median = copy.deepcopy(w_locals[0])
 
-#     with torch.no_grad():
-#         for k in w_median.keys():
-#             # 将所有参与方的模型参数按照 k 键的值进行排序
-#             sorted_params = sorted([w[k] for w in w_locals])
-#             # 取排序后的中位数
-#             median_idx = len(sorted_params) // 2
-#             w_median[k] = sorted_params[median_idx]
-
-#     return w_median
 
   
 def Median(w):  

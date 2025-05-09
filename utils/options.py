@@ -39,7 +39,7 @@ def args_parser():
     parser.add_argument('--weight_decay', type=float,
                         default=0.0005, help="sgd weight decay")
     parser.add_argument('--partition', type=str,
-                        choices=['shard', 'dirichlet'], default='shard')
+                        choices=['shard', 'dirichlet','IID'], default='IID')
     parser.add_argument('--dd_alpha', type=float, default=0.5,
                         help="dirichlet distribution alpha, you can select 1.0 or 0.5")
     parser.add_argument('--num_shards', type=int,
@@ -50,7 +50,7 @@ def args_parser():
 
     # model arguments
     parser.add_argument('--model', type=str, default='resnet18',
-                        choices=['resnet18', 'resnet34', 'resnet50', 'resnet20', 'fastText'], help='model name')
+                        choices=['resnet18', 'resnet34', 'resnet50', 'resnet20', 'fasttext'], help='model name')
     parser.add_argument('--pretrained', action='store_false',
                         help='if use pretrained model')
 
@@ -58,7 +58,7 @@ def args_parser():
 
     # other arguments
     parser.add_argument('--dataset', type=str, default='cifar10', help="name of dataset",
-                        choices=['cifar10', 'cifar100', 'clothing1m', 'AGNews'])
+                        choices=['cifar10', 'cifar100', 'AGNews'])
     
     parser.add_argument('--iid', action='store_true',
                         help='whether i.i.d or not')
@@ -96,6 +96,19 @@ def args_parser():
     
     parser.add_argument('--warmup_epochs', type=int,
                         default=30, help='number of warmup epochs for fedrn...')
+
+    parser.add_argument('--vocab_size', type=int,
+                        default=95814, help='vocab size for fasttext')
+
+    parser.add_argument('--hidden_dim', type=int,
+                        default=256, help='embedding dim for fasttext')
+
+    parser.add_argument('--n_gram_vocab', type=int,
+                        default=100000, help='n_gram vocab size for fasttext')
+
+
+
+
 
     # SELFIE / Joint optimization arguments
     parser.add_argument('--queue_size', type=int,
@@ -170,10 +183,8 @@ def args_parser():
                         help='decorrelation coefficient', default=0.1)
     
 
-    #FedELC: K_pencil = 10  # hyper param
-    # lamda_pencil = 1000
-    # alpha_pencil = 1.0
-    # beta_pencil = 0.5
+
+
     parser.add_argument('--K_pencil', type=int, default=10,
                         help='number of pencils')
     parser.add_argument('--lamda_pencil', type=float, default=1000,

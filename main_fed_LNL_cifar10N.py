@@ -53,7 +53,9 @@ if __name__ == '__main__':
     # Load dataset and split users
     ##############################
     dataset_train, dataset_test, args.num_classes, collate_fn = load_dataset(args.dataset)
-
+    labels = np.array(dataset_train.train_labels)
+    
+    
     args.collate_fn = None
     if collate_fn is not None:
         args.collate_fn = collate_fn
@@ -118,6 +120,7 @@ if __name__ == '__main__':
             alpha=args.dd_alpha,
             num_classes=args.num_classes,
         )
+    
     else:
         print("[Partitioning Via IID....]")
         dict_users = sample_iid(
@@ -139,57 +142,34 @@ if __name__ == '__main__':
 
 
 
-
     print("###########################################################")
+
     client_noise_map= {}
-
-
 
     ##############################
     # Add label noise to data
     ##############################
-    if sum(args.noise_group_num) != args.num_users:
-        exit('Error: sum of the number of noise group have to be equal the number of users')
 
-    if len(args.group_noise_rate) == 1:
-        args.group_noise_rate = args.group_noise_rate * 2
+    noise_file = torch.load('./data/CIFAR-10_human.pt')
+    clean_labels = noise_file['clean_label']
+    worst_labels = noise_file['worse_label']
+    aggre_labels = noise_file['aggre_label']
+    random_labels1 = noise_file['random_label1']
+    random_labels2 = noise_file['random_label2']
+    random_labels3 = noise_file['random_label3']
 
-    if not len(args.noise_group_num) == len(args.group_noise_rate) and \
-            len(args.group_noise_rate) * 2 == len(args.noise_type_lst):
-        exit('Error: The noise input is invalid.')
+    print("$$$$$$$$$$$$ COMPARISON with labels $$$$$$$$$$$$")
 
-    args.group_noise_rate = [(args.group_noise_rate[i * 2], args.group_noise_rate[i * 2 + 1])
-                             for i in range(len(args.group_noise_rate) // 2)]
+    comparison_of_clean_labels = (labels == clean_labels).sum()
+    print(comparison_of_clean_labels) 
 
-    user_noise_type_rates = []
-    for num_users_in_group, noise_type, (min_group_noise_rate, max_group_noise_rate) in zip(
-            args.noise_group_num, args.noise_type_lst, args.group_noise_rate):
-        noise_types = [noise_type] * num_users_in_group
+    comparison_of_worst_labels = (labels == worst_labels).sum()
+    print(comparison_of_worst_labels)
+    
+    dataset_train.targets = worst_labels
 
-        step = (max_group_noise_rate - min_group_noise_rate) / \
-            num_users_in_group
-        noise_rates = np.array(range(num_users_in_group)) * \
-            step + min_group_noise_rate
 
-        user_noise_type_rates += [*zip(noise_types, noise_rates)]
 
-    for user, (user_noise_type, user_noise_rate) in enumerate(user_noise_type_rates):
-        if user_noise_type != "clean":
-            data_indices = list(copy.deepcopy(dict_users[user]))
-
-            client_noise_map[user] = user_noise_rate
-
-            # for reproduction
-            random.seed(args.seed)
-            random.shuffle(data_indices)
-
-            noise_index = int(len(data_indices) * user_noise_rate)
-
-            for d_idx in data_indices[:noise_index]:
-                true_label = dataset_train.train_labels[d_idx]
-                noisy_label = noisify_label(
-                    true_label, num_classes=args.num_classes, noise_type=user_noise_type)
-                dataset_train.train_labels[d_idx] = noisy_label
 
     logging_args = dict(
         batch_size=args.test_bs,
