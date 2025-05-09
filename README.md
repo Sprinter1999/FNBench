@@ -1,5 +1,5 @@
 # FNBench
-Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels. I am currently updating this codebase and removing some outdated codes. The revised version will be available soon. If you have any questions, please feel free to contact me: ) 
+Official codes for our IEEE TDSC paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels (under major revision)](www.techrxiv.org/users/691169/articles/1215740-fnbench-benchmarking-robust-federated-learning-against-noisy-labels). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels. The revised version will be available soon. If you have any questions, please feel free to contact me: ) 
 
 ## Previous Abstract
 <!-- TBD. -->
@@ -13,12 +13,12 @@ We list a table as below:
 
 | Dataset | Model | #Classes | #Train Set | #Test Set | Label Noise Pattern | Extra Information  |
 | :-----: | :------: | :------: | :--------: | :-------: | :----------------: | :----------------: |
-| CIFAR-10 | ResNet-18 |   10    |   50,000   |   10,000  | Manual Injected | -  |
-| CIFAR-100| ResNet-32 |   100   |   50,000   |   10,000  | Manual Injected | -  |
-| AGNews |   FastText | 4     |  120,000  |   7,600  | Manual Injected | [link](https://www.kaggle.com/datasets/amananandrai/ag-news-classification-dataset)  |
-| CIFAR-10-N| ResNet-18 |  10 |   50,000   |   10,000  |  Human Annotation Error | [link](https://github.com/UCSC-REAL/cifar-10-100n)  |
-| CIFAR-100-N | ResNet-32 | 100  |   50,000   |   10,000  | Human Annotation Error  | [link](https://github.com/UCSC-REAL/cifar-10-100n)  |
-| Clothing1M| ResNet-50 |  14 | 1,000,000  |   10,000 | Systematic | [link](https://github.com/Cysu/noisy_label)  |
+| CIFAR-10 | ResNet-18 |   10    |   50,000   |   10,000  | Synthetic | -  |
+| CIFAR-100| ResNet-32 |   100   |   50,000   |   10,000  | Synthetic | -  |
+| AGNews |   FastText | 4     |  120,000  |   7,600  | Synthetic | [link](https://www.kaggle.com/datasets/amananandrai/ag-news-classification-dataset)  |
+| CIFAR-10-N| ResNet-18 |  10 |   50,000   |   10,000  |  Human Annotation Errors | [link](https://github.com/UCSC-REAL/cifar-10-100n)  |
+| CIFAR-100-N | ResNet-32 | 100  |   50,000   |   10,000  | Human Annotation Errors  | [link](https://github.com/UCSC-REAL/cifar-10-100n)  |
+| Clothing1M| ResNet-50 |  14 | 1,000,000  |   10,000 | Systematic Errors | [link](https://github.com/Cysu/noisy_label)  |
 
 
 For the last three datasets, considering related copyrights, please refer to the corresponding links for dataset requisition. Meanwhile, we provide an implementation code to experiment on `Clothing1M` in this [codebase](https://github.com/Sprinter1999/Clothing1M_FedAvg).
@@ -26,7 +26,7 @@ For the last three datasets, considering related copyrights, please refer to the
 ## Baselines
 
 - **General FL methods**: FedAvg, FedProx, FedExP
-- **Robust FL methods**: TrimmedMean, Gradient Clipping, Krum, Median, RFA (now debugging...)
+- **Robust FL methods**: TrimmedMean, Krum, Median, RFA
 - **General Noisy Label Learning (NLL) methods**: Co-teaching, Co-teaching+, SymmetricCE, SELFIE, Joint Optim, DivideMix
 - **Federated Nosy Label Learning (FNLL) methods**: RobustFL, FedLSR, FedRN, FedNoRo, FedELC
 
