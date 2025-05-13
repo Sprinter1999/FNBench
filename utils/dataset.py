@@ -31,13 +31,13 @@ def load_dataset(dataset):
         #TODO: please load the dataset in advance to /FNBench/data/cifar10, etc
         dataset_train = CIFAR10(
             root='./data/cifar10',
-            download=False,
+            download=True,
             train=True,
             transform=trans_cifar10_train,
         )
         dataset_test = CIFAR10(
             root='./data/cifar10',
-            download=False,
+            download=True,
             train=False,
             transform=trans_cifar10_val,
         )
@@ -58,13 +58,13 @@ def load_dataset(dataset):
         )
         dataset_train = CIFAR100(
             root='./data/cifar100',
-            download=False,
+            download=True,
             train=True,
             transform=trans_cifar100_train,
         )
         dataset_test = CIFAR100(
             root='./data/cifar100',
-            download=False,
+            download=True,
             train=False,
             transform=trans_cifar100_val,
         )
