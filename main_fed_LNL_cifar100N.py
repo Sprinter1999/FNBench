@@ -477,19 +477,7 @@ if __name__ == '__main__':
                     local_weights.clean_clients = clean_clients
                     local_weights.client_tag = [] # to indicate if this client is clean (1)
 
-                    # print(f"###############\n Len of NOISY/CLEAN clients: {len(noisy_clients)} VS {len(clean_clients)} \n ###############")
 
-
-                    noisyclient_rate_list, cleanclient_rate_list = [], []
-                    # FOr noisy client, we retreive the noisy rate from client_noise_map
-                    for each in noisy_clients:
-                        noisyclient_rate_list.append(client_noise_map[each])
-                    for each in clean_clients:
-                        cleanclient_rate_list.append(client_noise_map[each])
-
-                    print(f"#######[Division]########\n Len of NOISY/CLEAN clients: {len(noisy_clients)} VS {len(clean_clients)} \n ###############")
-                    print(f"#######[Division]########\n Sum of noisy clients' rates total quantity: {sum(noisyclient_rate_list)}")
-                    print(f"#######[Division]########\n Sum of clean clients' rates total quantity: {sum(cleanclient_rate_list)}")
                 
                 else:
                     pass
