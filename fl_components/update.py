@@ -245,7 +245,7 @@ def get_local_update_objects(args, dataset_train, dict_users=None, noise_rates=N
     return local_update_objects
 
 
-
+#FIXME: You can add related codes according to your need in your forked code base. This is partially removed in this file to clean up codes :)
 class FedDecorrLoss(nn.Module):
 
     def __init__(self):
