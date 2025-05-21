@@ -28,7 +28,7 @@ For the last three datasets, considering related copyrights, please refer to the
 - **General FL methods**: FedAvg, FedProx, FedExP
 - **Robust FL methods**: TrimmedMean, Krum, Median, RFA
 - **General Noisy Label Learning (NLL) methods**: Co-teaching, Co-teaching+, SymmetricCE, SELFIE, Joint Optim, DivideMix
-- **Federated Nosy Label Learning (FNLL) methods**: RobustFL, FedLSR, [FedRN]([https://github.com/UCSC-REAL/cifar-10-100n](https://github.com/ElvinKim/FedRN)), FedNoRo, FedELC
+- **Federated Nosy Label Learning (FNLL) methods**: RobustFL, FedLSR, FedNoRo, [FedRN](https://github.com/ElvinKim/FedRN), FedELC
 
 
 ## Example for Usage
@@ -47,6 +47,7 @@ We recommend some useful related resources to further provide several relevant d
 | --- | --- | --- |
 | FedNoisy | Recommended codebase for FNLL research | [Link](https://github.com/SMILELab-FL/FedNoisy) |
 | Clothing1M_FedAvg | Recommended codebase for FedAvg on Clothing1M | [Link](https://github.com/Sprinter1999/Clothing1M_FedAvg) |
+| FedRN | Referred codebase for implementation | [Link](https://github.com/ElvinKim/FedRN) |
 | HAR Datasets (ACM Mobisys) | Recommended time-series Datasets | [Link](https://github.com/xmouyang/FL-Datasets-for-HAR) |
 | FedDSHAR (FGCS) | Recommended work to tackle noisy labels for time-series | [Link](https://github.com/coke2020ice/FedDSHAR) |
 | FedNed (AAAI) | Recommended work to tackle extreme noisy clients | [Link](https://github.com/linChen99/FedNed) |
