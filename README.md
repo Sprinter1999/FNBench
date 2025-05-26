@@ -44,7 +44,7 @@ please refer to the `./utils/options.py` for more details. For CIFAR-N experimen
 We recommend some useful related resources to further provide several relevant directions for future study.
 
 | Name | Summary | Code Link |
-| --- | --- | --- |
+| :---: | :---: | :---: |
 | FedNoisy | Recommended codebase for FNLL research | [Link](https://github.com/SMILELab-FL/FedNoisy) |
 | Clothing1M_FedAvg | Recommended codebase for FedAvg on Clothing1M | [Link](https://github.com/Sprinter1999/Clothing1M_FedAvg) |
 | FedRN | Referred codebase for implementation | [Link](https://github.com/ElvinKim/FedRN) |
