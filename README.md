@@ -28,7 +28,9 @@ For the last three datasets, considering related copyrights, please refer to the
 - **General FL methods**: FedAvg, FedProx, FedExP
 - **Robust FL methods**: TrimmedMean, Krum, Median, RFA
 - **General Noisy Label Learning (NLL) methods**: Co-teaching, Co-teaching+, SymmetricCE, SELFIE, Joint Optim, DivideMix
-- **Federated Nosy Label Learning (FNLL) methods**: RobustFL, FedLSR, FedNoRo, [FedRN](https://github.com/ElvinKim/FedRN), FedELC
+- **Federated Nosy Label Learning (FNLL) methods**: RobustFL, FedLSR, FedNoRo, [FedRN](https://github.com/ElvinKim/FedRN), FedELC，FedELR
+
+For FedELR re-implementation, please kindly refer to [the original paper](https://papers.ssrn.com/sol3/Delivery.cfm?abstractid=4995227).
 
 
 ## Example for Usage
