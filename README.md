@@ -1,10 +1,6 @@
 # FNBench
-The initial version of official codes for our paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels](https://arxiv.org/abs/2505.06684). It serves as a benchmark platform for researchers to evaluate robust federated learning algorithms against noisy labels. If you have any questions, please feel free to contact me: ) 
+The initial version of official codes for our paper [FNBench: Benchmarking Robust Federated Learning against Noisy Labels](https://arxiv.org/abs/2505.06684). It serves as a benchmark study for researchers to evaluate robust federated learning algorithms against noisy labels. If you have any questions, please feel free to contact me: ) 
 
-## Previous Abstract
-<!-- TBD. -->
-
-![framework](TDSC.jpg)
 
 ## Datasets
 For vision tasks, we use CIFAR-10, CIFAR-100, CIFAR-10-N, CIFAR-100-N, and one large-scale online clothing datasets Clothing1M for evaluation. 
