@@ -14,7 +14,7 @@ This repository contains the initial official code release for our arXiv paper [
 Figure 1: Code structure for FNBench. The modular design makes it easy to extend the benchmark with new baselines, datasets, and experimental components by adding or editing modules in the corresponding folders.
 To run an algorithm, execute `main_fed_LNL.py` with the target method, dataset, and partition settings.
 
-👏 _FNBench is a **comprehensive**, **easy-to-use**, and **extensible** federated learning (FL) library and 
+ **FNBench** is a **comprehensive**, **easy-to-use**, and **extensible** federated learning (FL) library and 
 benchmark: It facilitates researchers to evaluate robust federated learning algorithms against 
 noisy labels, while standardizing [baselines](#algorithms-with-code-updating), [datasets](#datasets), and [noise 
 patterns](#noise-patterns) to enable 
@@ -25,7 +25,7 @@ _What can you get?_
 * This paper reports a unified benchmark and provides reproducible results for the representative [baselines](#algorithms-with-code-updating)
   spanning **General FL**, **Robust FL**, **centralized noisy-label learning** (plugged into FL), and 
   **federated noisy-label learning**.
-* A benchmark protocol covering 6 [datasets](#datasets) (modality: image and text) under three distinct types of 
+* A benchmark study covering 6 [datasets](#datasets) (modality: image and text) under three distinct types of 
   label noise: **synthetic label noise**, **human-annotated errors**, and **systematic labeling errors**.
 * A lightweight diagnostic that links noisy supervision to **representation degradation** (dimensional collapse), plus an optional **representation-aware regularization** as a controlled enhancement.
 
