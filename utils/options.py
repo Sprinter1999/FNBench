@@ -5,12 +5,11 @@ def args_parser():
     parser = argparse.ArgumentParser()
     # label noise method
     parser.add_argument('--method', type=str, default='fedavg',
-                        choices=['fedavg', 'fedprox', 'fedexp', 'fedprox', 
+                        choices=['fedavg', 'fedprox', 'fedexp',
                                  'krum', 'median', 'trimmedMean','RFA','clipping',
                                  'selfie', 'jointoptim', 'symmetricce', 'coteaching', 'coteaching+', 'dividemix', 
                                  'fedrn', 'fedlsr', 'robustfl','fednoro','fedELC'],
                         help='method name')
-
 
     # federated arguments
     parser.add_argument('--epochs', type=int, default=120,

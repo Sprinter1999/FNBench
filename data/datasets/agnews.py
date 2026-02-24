@@ -90,6 +90,6 @@ class AGNews(Dataset):
 
 def collate_fn(batch):
     texts, labels = zip(*batch)
-    texts_padded = pad_sequence(texts, batch_first=True, padding_value=0)  # 填充到相同长度
+    texts_padded = pad_sequence(texts, batch_first=True, padding_value=0)
     labels = torch.tensor(labels, dtype=torch.long)
     return texts_padded, labels
