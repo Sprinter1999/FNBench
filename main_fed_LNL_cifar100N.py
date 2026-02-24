@@ -12,13 +12,12 @@ from tqdm import tqdm
 
 from utils import load_dataset
 from utils.options import args_parser
-from utils.sampling import sample_iid, sample_noniid_shard, sample_dirichlet
+from data.partition import sample_iid, sample_noniid_shard, sample_dirichlet
 from utils.utils import noisify_label
 
-from fl_components.fed import LocalModelWeights
-from fl_components.nets import get_model
-from fl_components.test import test_img
-from fl_components.update import get_local_update_objects
+from flcore.federation import LocalModelWeights
+from flcore.test import test_img
+from flcore.update import get_local_update_objects
 
 from model_arch.build_model import build_model
 

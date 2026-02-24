@@ -11,7 +11,7 @@ else:
     import pickle
 
 import torch.utils.data as data
-from .utils import download_url, check_integrity
+from utils.utils import download_url, check_integrity
 
 
 class BaseCIFARDataset(data.Dataset):
@@ -250,7 +250,7 @@ class CIFAR100(BaseCIFARDataset):
     """
     base_folder = 'cifar-100-python'
     url = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
-    filename = "cifar-10-python.tar.gz"
+    filename = "cifar-100-python.tar.gz"
 
     tgz_md5 = 'eb9058c3a382ffc7106e4002c42a8d85'
     train_list = [

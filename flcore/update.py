@@ -5,11 +5,12 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.autograd import Variable
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torch.cuda.amp import autocast as autocast
-from torch.nn.utils.rnn import pad_sequence
 import copy
-
+from data.collate import dataset_split_collate_fn
+from data.wrappers import DatasetSplit, DatasetSplitRFL, PairDataset, PairProbDataset
+from utils.losses import SemiLoss, FedDecorrLoss, SCELoss
 
 from .correctors import SelfieCorrector, JointOptimCorrector
 # from .nets import get_model
@@ -17,135 +18,6 @@ from model_arch.build_model import build_model as get_model
 
 import torchvision
 from torchvision import transforms
-
-
-def dataset_split_collate_fn(batch):
-    if len(batch[0]) == 2:  # (data, label)
-        data, labels = zip(*batch)
-        if isinstance(data[0], torch.Tensor) and data[0].dim() == 1:  
-            data_padded = pad_sequence(data, batch_first=True, padding_value=0)  
-            labels = torch.tensor(labels, dtype=torch.long)
-            return data_padded, labels
-        else:  # images
-            data = torch.stack(data)
-            labels = torch.tensor(labels, dtype=torch.long)
-            return data, labels
-
-    elif len(batch[0]) == 3:  # (data, label, item)
-        data, labels, items = zip(*batch)
-        if isinstance(data[0], torch.Tensor) and data[0].dim() == 1:  
-            data_padded = pad_sequence(data, batch_first=True, padding_value=0)
-            labels = torch.tensor(labels, dtype=torch.long)
-            items = torch.tensor(items, dtype=torch.long)
-            return data_padded, labels, items
-        else:  # images
-            data = torch.stack(data)
-            labels = torch.tensor(labels, dtype=torch.long)
-            items = torch.tensor(items, dtype=torch.long)
-            return data, labels, items
-
-    elif len(batch[0]) == 4:  # (data, label, item, real_idx)
-        data, labels, items, real_idxs = zip(*batch)
-        if isinstance(data[0], torch.Tensor) and data[0].dim() == 1:  
-            data_padded = pad_sequence(data, batch_first=True, padding_value=0)
-            labels = torch.tensor(labels, dtype=torch.long)
-            items = torch.tensor(items, dtype=torch.long)
-            real_idxs = torch.tensor(real_idxs, dtype=torch.long)
-            return data_padded, labels, items, real_idxs
-        else:  # images
-            data = torch.stack(data)
-            labels = torch.tensor(labels, dtype=torch.long)
-            items = torch.tensor(items, dtype=torch.long)
-            real_idxs = torch.tensor(real_idxs, dtype=torch.long)
-            return data, labels, items, real_idxs
-
-    else:
-        raise ValueError(f"Unsupported batch format with {len(batch[0])} elements.")
-
-
-class DatasetSplit(Dataset):
-    def __init__(self, dataset, idxs, idx_return=False, real_idx_return=False):
-        self.dataset = dataset
-        self.idxs = list(idxs)
-        self.idx_return = idx_return
-        self.real_idx_return = real_idx_return
-
-    def __len__(self):
-        return len(self.idxs)
-
-    def __getitem__(self, item):
-        item = int(item)
-        image, label = self.dataset[self.idxs[item]]
-
-        if self.idx_return:
-            return image, label, item
-        elif self.real_idx_return:
-            return image, label, item, self.idxs[item]
-        else:
-            return image, label
-
-
-class PairProbDataset(Dataset):
-    def __init__(self, dataset, idxs, prob, idx_return=False):
-        self.dataset = dataset
-        self.idxs = list(idxs)
-        self.idx_return = idx_return
-        self.prob = prob
-
-    def __len__(self):
-        return len(self.idxs)
-
-    def __getitem__(self, item):
-        item = int(item)
-        image1, label = self.dataset[self.idxs[item]]
-        image2, label = self.dataset[self.idxs[item]]
-        prob = self.prob[self.idxs[item]]
-
-        if self.idx_return:
-            return image1, image2, label, prob, item
-        else:
-            return image1, image2, label, prob
-
-
-class PairDataset(Dataset):
-    def __init__(self, dataset, idxs, idx_return=False, label_return=False):
-        self.dataset = dataset
-        self.idxs = list(idxs)
-        self.idx_return = idx_return
-        self.label_return = label_return
-
-    def __len__(self):
-        return len(self.idxs)
-
-    def __getitem__(self, item):
-        item = int(item)
-        image1, label = self.dataset[self.idxs[item]]
-        image2, label = self.dataset[self.idxs[item]]
-        sample = (image1, image2,)
-
-        if self.label_return:
-            sample += (label,)
-
-        if self.idx_return:
-            sample += (item,)
-
-        return sample
-
-
-class DatasetSplitRFL(Dataset):
-    def __init__(self, dataset, idxs):
-        self.dataset = dataset
-        self.idxs = list(idxs)
-
-    def __len__(self):
-        return len(self.idxs)
-
-    def __getitem__(self, item):
-        item = int(item)
-        image, label = self.dataset[self.idxs[item]]
-
-        return image, label, self.idxs[item]
-
 
 def mixup(inputs, targets, alpha=1.0):
     l = np.random.beta(alpha, alpha)
@@ -161,25 +33,6 @@ def mixup(inputs, targets, alpha=1.0):
 
     return mixed_input, mixed_target
 
-
-def linear_rampup(current, warm_up, lambda_u, rampup_length=16):
-    current = np.clip((current - warm_up) / rampup_length, 0.0, 1.0)
-    return lambda_u * float(current)
-
-
-class SemiLoss:
-    def __call__(self, outputs_x, targets_x, outputs_u, targets_u, lambda_u, epoch, warm_up):
-        probs_u = torch.softmax(outputs_u, dim=1)
-
-        # labeled data loss
-        Lx = -torch.mean(torch.sum(F.log_softmax(outputs_x,
-                         dim=1) * targets_x, dim=1))
-        # unlabeled data loss
-        Lu = torch.mean((probs_u - targets_u) ** 2)
-
-        lamb = linear_rampup(epoch, warm_up, lambda_u)
-
-        return Lx + lamb * Lu
 
 
 def get_local_update_objects(args, dataset_train, dict_users=None, noise_rates=None, gaussian_noise=None, glob_centroid=None):
@@ -197,11 +50,9 @@ def get_local_update_objects(args, dataset_train, dict_users=None, noise_rates=N
             local_update_object = BaseLocalUpdate(**local_update_args)
 
         elif args.method == 'fedprox':
-            # print(f"generate fedprox clients")
             local_update_object = LocalUpdateFedProx(**local_update_args)
 
         elif args.method == 'clipping':
-            # print(f"generate fedprox clients")
             local_update_object = LocalUpdateClipping(**local_update_args)
 
         # TODO: noise resilient methods
@@ -244,61 +95,6 @@ def get_local_update_objects(args, dataset_train, dict_users=None, noise_rates=N
 
     return local_update_objects
 
-
-#FIXME: You can add related codes according to your need in your forked code base. This is partially removed in this file to clean up codes :)
-class FedDecorrLoss(nn.Module):
-
-    def __init__(self):
-        super(FedDecorrLoss, self).__init__()
-        self.eps = 1e-8
-        
-
-    def _off_diagonal(self, mat):
-        # return a flattened view of the off-diagonal elements of a square matrix
-        n, m = mat.shape
-        assert n == m
-        return mat.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
-
-    def forward(self, x):
-        N, C = x.shape
-        if N == 1:
-            return 0.0
-
-        x = x - x.mean(dim=0, keepdim=True)
-        x = x / torch.sqrt(self.eps + x.var(dim=0, keepdim=True))
-
-        corr_mat = torch.matmul(x.t(), x)
-
-        loss = (self._off_diagonal(corr_mat).pow(2)).mean()
-        loss = loss / N
-
-        return loss
-
-
-class SCELoss(torch.nn.Module):
-    def __init__(self, alpha, beta, num_classes=10):
-        super(SCELoss, self).__init__()
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.alpha = alpha
-        self.beta = beta
-        self.num_classes = num_classes
-        self.cross_entropy = torch.nn.CrossEntropyLoss()
-
-    def forward(self, pred, labels):
-        # CCE
-        ce = self.cross_entropy(pred, labels)
-
-        # RCE
-        pred = F.softmax(pred, dim=1)
-        pred = torch.clamp(pred, min=1e-7, max=1.0)
-        label_one_hot = torch.nn.functional.one_hot(
-            labels, self.num_classes).float().to(self.device)
-        label_one_hot = torch.clamp(label_one_hot, min=1e-4, max=1.0)
-        rce = (-1*torch.sum(pred * torch.log(label_one_hot), dim=1))
-
-        # Loss
-        loss = self.alpha * ce + self.beta * rce.mean()
-        return loss
 
 
 # 5:'fedavg', 'krum','median','trimmedMean', 'fedexp'

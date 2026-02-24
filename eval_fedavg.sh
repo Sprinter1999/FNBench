@@ -12,7 +12,7 @@ python main_fed_LNL.py \
 --group_noise_rate 0.0 0.4 \
 --partition dirichlet \
 --dd_alpha 1.0 \
---method fedavg | tee ./log_fedavg/fedavg_cifar10_pair04_dirichlet10.txt
+--method fedavg | tee ./log/fedavg_cifar10_pair04_dirichlet10.txt
 
 python main_fed_LNL.py \
 --dataset cifar10 \
@@ -23,7 +23,7 @@ python main_fed_LNL.py \
 --group_noise_rate 0.0 0.4 \
 --partition dirichlet \
 --dd_alpha 0.5 \
---method fedavg | tee ./log_fedavg/fedavg_cifar10_sym04_dirichlet05.txt
+--method fedavg | tee ./log/fedavg_cifar10_sym04_dirichlet05.txt
 
 
 python main_fed_LNL.py \
@@ -34,4 +34,4 @@ python main_fed_LNL.py \
 --noise_group_num 50 50 \
 --group_noise_rate 0.0 0.4 0.0 0.4 \
 --partition shard \
---method fedavg | tee ./log_fedavg/fedavg_cifar10_mixed_shard.txt
+--method fedavg | tee ./log/fedavg_cifar10_mixed_shard.txt
