@@ -29,9 +29,8 @@ _What can you get?_
   label noise: **synthetic label noise**, **human-annotated errors**, and **systematic labeling errors**.
 * A lightweight diagnostic that links noisy supervision to **representation degradation** (dimensional collapse), plus an optional **representation-aware regularization** as a controlled enhancement.
 
-This repository is under active development. **[Run](#quick-start-usage-example) it on the PC and 
-[contribute](#extensibility) your algorithms, datasets, noise patterns and so on to grow the 
-FL community**.
+This repository is under active development. **[Run](#quick-start-usage-example) it and 
+[contribute](#extensibility) your algorithms, datasets and noise patterns, and PR is always welcome**.
 
 ## Algorithms with code (updating)
 
